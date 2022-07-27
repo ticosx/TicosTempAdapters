@@ -1,13 +1,10 @@
-
 #include "TkTempNtc.h"
-#include <stdio.h>
-#include "sdkconfig.h"
+#include "Log.h"
 //ADC头文件
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 // ADC斜率曲线
 static esp_adc_cal_characteristics_t  temp_adc_chars;
-#define ADC_NTC_QUEUE_SIZE           10
 
 TkTempNtc::TkTempNtc(temp_info_t *info) : TemperatureAdapter(info) {
 
@@ -18,39 +15,39 @@ bool TkTempNtc::begin(){
     esp_err_t err = ESP_OK;
     err = adc1_config_width(ADC_WIDTH_BIT_12);// 12位分辨率
     if (err) {
-        printf("adc1_config_width failed: %d", err);
+        logInfo("adc1_config_width failed: %d", err);
         return false;
     }
-    err = adc1_config_channel_atten(ADC_CHN, ADC_ATTEN_DB_11);// 电压输入衰减
+    err = adc1_config_channel_atten(chn, ADC_ATTEN_DB_11);// 电压输入衰减
     if (err) {
-        printf("adc1_config_channel_atten failed: %d", err);
+        logInfo("adc1_config_channel_atten failed: %d", err);
         return false;
     }
-    esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, ADC_VEF, &temp_adc_chars);
+    esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, vef, &temp_adc_chars);
     
-    printf("esp_adc_cal_characterize: %d", val_type);
+    logInfo("esp_adc_cal_characterize: %d", val_type);
 
     return true;
 }
 
 bool TkTempNtc::end(){
-    gpio_reset_pin(ADC_PIN);
+    gpio_reset_pin(adcio);
     return true;
 }
 
 bool TkTempNtc::init() {
 
-    ADC_CHN = (adc1_channel_t)info->adc_chn;
-    ADC_PIN = (gpio_num_t)info->adc_pin ;
-    ADC_VEF = info->adc_vref;
+    chn = (adc1_channel_t)info->adc_chn;
+    adcio = (gpio_num_t)info->adc_pin ;
+    vef = info->adc_vref;
     begin();
-    printf("TkTempNtc_init ,ADC_CHN = %d,ADC_VEF= %d\n",ADC_CHN,ADC_VEF);
+    logInfo("TkTempNtc_init ,ADC_CHN = %d,ADC_VEF= %d\n",chn,vef);
 
     return true;
 }
 bool TkTempNtc::deinit() {
     end();
-    printf("ntc deinit \n");
+    logInfo("ntc deinit \n");
     return true;
 }
 
@@ -76,7 +73,7 @@ uint32_t TkTempNtc::getVotValue(void)
    // 
     for(i=0;i<ADC_NTC_QUEUE_SIZE;i++)//一次读取10个
     {
-        tw_u32AdcNtcQueue[i]= adc1_get_raw(ADC_CHN);// 采集ADC原始值
+        tw_u32AdcNtcQueue[i]= adc1_get_raw(chn);// 采集ADC原始值
     }  
 
     adc_max = tw_u32AdcNtcQueue[0];
@@ -122,7 +119,7 @@ uint32_t TkTempNtc::getAdcValue(void)
    // 
     for(i=0;i<ADC_NTC_QUEUE_SIZE;i++)//一次读取10个
     {
-        tw_u32AdcNtcQueue[i]= adc1_get_raw(ADC_CHN);// 采集ADC原始值
+        tw_u32AdcNtcQueue[i]= adc1_get_raw(chn);// 采集ADC原始值
     }  
 
     adc_max = tw_u32AdcNtcQueue[0];

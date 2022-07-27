@@ -8,7 +8,8 @@
 #include "esp_adc_cal.h"
 #include "driver/gpio.h"
 
-#define TEMP_TABLE_LEN   121 //温度区间总值
+#define ADC_NTC_QUEUE_SIZE     10
+#define TEMP_TABLE_LEN         121 //温度区间总值
 const uint16_t c_au16TempTable[TEMP_TABLE_LEN]=
 {
     1778,1733,1689,1645,1601,1558,1515,1472,1430,1389,   /*-10° ~ -1°*/
@@ -58,9 +59,9 @@ class TkTempNtc: public TemperatureAdapter{
     private:
         bool begin();
         bool end() ;
-        gpio_num_t  ADC_PIN;
-        adc1_channel_t ADC_CHN = ADC1_CHANNEL_3;
-        uint16_t ADC_VEF = 3300;
+        gpio_num_t  adcio;
+        adc1_channel_t chn = ADC1_CHANNEL_3;
+        uint16_t vef = 3300;
         uint32_t tw_u32AdcNtcQueue[10];
 
 };
